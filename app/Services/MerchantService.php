@@ -7,6 +7,9 @@ use App\Models\Affiliate;
 use App\Models\Merchant;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class MerchantService
 {
@@ -21,6 +24,53 @@ class MerchantService
     public function register(array $data): Merchant
     {
         // TODO: Complete this method
+        try {
+            // Validate the request data
+            $validator = Validator::make($data, [
+                'domain' => 'required|string',
+                'name' => 'required|string',
+                'email' => 'required|email|unique:users',
+                'api_key' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Data has some error please check.',
+                ], 500);
+            }
+
+            // Register a new user
+                $user = new User();
+                $user->name = $data['name'];
+                $user->email = $data['email'];
+                $user->password = Hash::make($data['api_key']); // Remember to hash the password
+                $user->type = User::TYPE_MERCHANT; // Set the user type according to your constants
+                if($user->save()){
+                    // Register a new merchant
+                    $merchant = new Merchant();
+                    $merchant->user_id = $user->id;
+                    $merchant->name = $data['name'];
+                    $merchant->domain = $data['domain'];
+                    $merchant->turn_customers_into_affiliates = 1; // Set the merchant customers into affiliates'
+                    $merchant->default_commission_rate = 0.1; // Set the merchant default commission rate if you want then change it here'
+                    $merchant->save();
+                }
+
+            // Return a response or redirect as needed
+            return response()->json([
+                'message' => 'User and merchant registered successfully.', 
+                'user' => $user, 
+                'merchant' => $merchant
+            ]);
+
+        } catch (\Exception $e) {
+            // Handle the exception
+            return response()->json([
+                'message' => 'User and merchant registration failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+
     }
 
     /**
@@ -32,6 +82,73 @@ class MerchantService
     public function updateMerchant(User $user, array $data)
     {
         // TODO: Complete this method
+        try {
+
+            // Validate the request data
+            $validator = Validator::make($data, [
+                'domain' => 'required|string',
+                'name' => 'required|string',
+                'email' => 'required|email|unique:users',
+                'api_key' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'message' => 'Data has some error please check.',
+                ], 500);
+            }
+
+            $userId = $user->id;
+
+            // Update User
+            $user = User::find($userId);
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found.',
+                ], 500);
+            } 
+
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+            $user->password = Hash::make($data['api_key']); // Remember to hash the password
+            $user->type = User::TYPE_MERCHANT; // Set the user type according to your constants
+            if($user->save()){
+                // Update Merchant
+                $merchant = Merchant::where(['user_id' => $userId])->first();
+                // You can use also this one for find merchant 
+                // $merchant = Merchant::whereHas('users', function ($query) use ($userId) {
+                //     $query->where('id', $userId);
+                // })->first();
+
+                if (!$merchant) {
+                    return response()->json([
+                        'message' => 'Merchant not found.',
+                    ], 500);
+                } 
+
+                $merchant->name = $data['name'];
+                $merchant->domain = $data['domain'];
+                $merchant->turn_customers_into_affiliates = 1; // Set the merchant customers into affiliates'
+                $merchant->default_commission_rate = 0.1; // Set the merchant default commission rate if you want then change it here'
+                $merchant->save();
+            }
+
+            // Return a response or redirect as needed
+            return response()->json([
+                'message' => 'User and merchant update successfully', 
+                'user' => $user, 
+                'merchant' => $merchant
+            ]);
+
+
+        } catch (\Exception $e) {
+            // Handle the exception
+            return response()->json([
+                'message' => 'User and merchant update failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -44,6 +161,29 @@ class MerchantService
     public function findMerchantByEmail(string $email): ?Merchant
     {
         // TODO: Complete this method
+        try {
+            $user = User::where('email', $email)->first();
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found.',
+                ], 500);
+            } 
+            $userId = $user->id;
+            $merchant = Merchant::where(['user_id' => $userId])->first();
+            if (!$merchant) {
+                return response()->json([
+                    'message' => 'Merchant not found.',
+                ], 500);
+            } 
+            return $merchant;
+
+        } catch (\Exception $e) {
+            // Handle the exception
+            return response()->json([
+                'message' => 'User and merchant update failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }   
     }
 
     /**
