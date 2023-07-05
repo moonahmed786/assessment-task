@@ -124,7 +124,7 @@ class MerchantService
                     ], 500);
                 } 
 
-                $merchant->name = $data['name'];
+                $merchant->display_name = $data['name'];
                 $merchant->domain = $data['domain'];
                 $merchant->turn_customers_into_affiliates = 1; // Set the merchant customers into affiliates'
                 $merchant->default_commission_rate = 0.1; // Set the merchant default commission rate if you want then change it here'
@@ -135,6 +135,7 @@ class MerchantService
 
         } catch (\Exception $e) {
             // Handle the exception
+            dd($e->getMessage());
             return response()->json([
                 'message' => 'User and merchant update failed.',
                 'error' => $e->getMessage(),
