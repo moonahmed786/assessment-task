@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
 
 class OrderService
 {
@@ -54,30 +55,25 @@ class OrderService
                     'message' => 'Data has some error please check.',
                 ], 500);
             }
-
-            $checkEmail = User::where(['email' => $data['customer_email']])->first();
-            if(!$checkEmail){
-                $user = new User();
-                $user->name = $data['customer_name'];
-                $user->email = $data['customer_email'];
-                $user->password = Hash::make('password'); // Remember to hash the password
-                $user->type = User::TYPE_AFFILIATE; // Set the user type according to your constants
-                if($user->save()){
-                    // Register a new merchant
-                    $affiliate = new Affiliate();
-                    $affiliate->user_id = $user->id;
-                    $affiliate->merchant_id = $merchant->id;
-                    $affiliate->commissionRate = $commissionRate;
-                    $affiliate->discount_code = $data['discount_code']; // Set the merchant default commission rate if you want then change it here'
-                    $affiliate->save();
-                    return $affiliate;
-                }
-            }
-
             
+            $merchant = Merchant::where(['domain' => $data['merchant_domain']])->first();
+            
+            $affiliate = Affiliate::with(['user' => function($query) use ($data){
+                $query->where(['email' => $data['customer_email']]);
+            }])->first();
 
+            $order = new Order();
+            $order->merchant_id = $merchant->id;
+            $order->affiliate_id = $affiliate->id;
+            $order->subtotal = $data['subtotal_price'];
+            $order->commission_owed = ($data['subtotal_price']*$affiliate->commission_rate);
+            $order->discount_code = $data['discount_code'];
+            $order->payout_status = Order::STATUS_PAID;
+            $order->save();
+            return back();         
         } catch (\Exception $e) {
             // Handle the exception
+            dd($e->getMessage());
             return response()->json([
                 'message' => 'Affiliate registered successfully.',
                 'error' => $e->getMessage(),

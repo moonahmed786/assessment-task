@@ -72,10 +72,6 @@ class AffiliateService
                     return $affiliate;
                     // dd($affiliate);
                 }
-            // return response()->json([
-            //     'message' => 'User and affiliate registered successfully.', 
-            //     'affiliate' => $affiliate
-            // ]);
 
         } catch (\Exception $e) {
             // Handle the exception
