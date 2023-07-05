@@ -34,11 +34,11 @@ class MerchantController extends Controller
         $revenue = Order::whereBetween('created_at', [$fromDate, $toDate])->sum('subtotal');
 
         // Calculate the sum of unpaid commissions for orders with an affiliate within the date range
-        $commissionOwed = Order::whereBetween('created_at', [$fromDate, $toDate])->sum('commission_owed');
-
+        $commissionOwed = Order::whereBetween('created_at', [$fromDate, $toDate])->whereNotNull('affiliate_id')->sum('commission_owed');
+        // dd($commissionOwed);
         return response()->json([
             'count' => $orderCount,
-            'commission_owed' => $commissionOwed,
+            'commissions_owed' => $commissionOwed,
             'revenue' => $revenue,
         ]);
     }

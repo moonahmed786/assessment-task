@@ -68,12 +68,13 @@ class OrderService
                     $affiliate->user_id = $user->id;
                     $affiliate->merchant_id = $merchant->id;
                     $affiliate->commissionRate = $commissionRate;
-                    $affiliate->discount_code = 'AHMED'; // Set the merchant default commission rate if you want then change it here'
+                    $affiliate->discount_code = $data['discount_code']; // Set the merchant default commission rate if you want then change it here'
                     $affiliate->save();
+                    return $affiliate;
                 }
             }
 
-            return $affiliate;
+            
 
         } catch (\Exception $e) {
             // Handle the exception

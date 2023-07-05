@@ -43,28 +43,25 @@ class MerchantService
                 $user = new User();
                 $user->name = $data['name'];
                 $user->email = $data['email'];
-                $user->password = Hash::make($data['api_key']); // Remember to hash the password
+                $user->password = $data['api_key']; // Remember to hash the password
                 $user->type = User::TYPE_MERCHANT; // Set the user type according to your constants
+                
                 if($user->save()){
                     // Register a new merchant
                     $merchant = new Merchant();
                     $merchant->user_id = $user->id;
-                    $merchant->name = $data['name'];
+                    $merchant->display_name = $data['name'];
                     $merchant->domain = $data['domain'];
                     $merchant->turn_customers_into_affiliates = 1; // Set the merchant customers into affiliates'
                     $merchant->default_commission_rate = 0.1; // Set the merchant default commission rate if you want then change it here'
                     $merchant->save();
+                     
+                    return $merchant;
                 }
-
-            // Return a response or redirect as needed
-            return response()->json([
-                'message' => 'User and merchant registered successfully.', 
-                'user' => $user, 
-                'merchant' => $merchant
-            ]);
 
         } catch (\Exception $e) {
             // Handle the exception
+            dd($e->getMessage());
             return response()->json([
                 'message' => 'User and merchant registration failed.',
                 'error' => $e->getMessage(),
@@ -132,15 +129,9 @@ class MerchantService
                 $merchant->turn_customers_into_affiliates = 1; // Set the merchant customers into affiliates'
                 $merchant->default_commission_rate = 0.1; // Set the merchant default commission rate if you want then change it here'
                 $merchant->save();
+                // Return a response or redirect as needed
+                return $merchant;
             }
-
-            // Return a response or redirect as needed
-            return response()->json([
-                'message' => 'User and merchant update successfully', 
-                'user' => $user, 
-                'merchant' => $merchant
-            ]);
-
 
         } catch (\Exception $e) {
             // Handle the exception
@@ -162,23 +153,15 @@ class MerchantService
     {
         // TODO: Complete this method
         try {
-            $user = User::where('email', $email)->first();
-            if (!$user) {
-                return response()->json([
-                    'message' => 'User not found.',
-                ], 500);
-            } 
-            $userId = $user->id;
-            $merchant = Merchant::where(['user_id' => $userId])->first();
-            if (!$merchant) {
-                return response()->json([
-                    'message' => 'Merchant not found.',
-                ], 500);
-            } 
+
+            $merchant = Merchant::with(['user' => function($query) use ($email){
+                $query->where(['email' => $email]);
+            }])->first();
             return $merchant;
 
         } catch (\Exception $e) {
             // Handle the exception
+            dd($e->getMessage());
             return response()->json([
                 'message' => 'User and merchant update failed.',
                 'error' => $e->getMessage(),
