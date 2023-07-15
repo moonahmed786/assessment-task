@@ -18,7 +18,8 @@ class AffiliateService
 {
     public function __construct(
         protected ApiService $apiService
-    ) {}
+    ) {
+    }
 
     /**
      * Create a new affiliate for the merchant with the given commission rate.
@@ -33,7 +34,7 @@ class AffiliateService
     {
         // TODO: Complete this method  
                 $user = new User();
-
+                $api_service = new ApiService;    
                 $data = [
                     'name' => $name,
                     'email' => $email,
@@ -59,8 +60,9 @@ class AffiliateService
                         $affiliate->user_id = $user->id;
                         $affiliate->merchant_id = $merchant->id;
                         $affiliate->commission_rate = $commissionRate;
-                        $affiliate->discount_code = ""; // Set the merchant default commission rate if you want then change it here'
+                        $affiliate->discount_code = $this->apiService->createDiscountCode($merchant)['code']; // Set the merchant default commission rate if you want then change it here'
                         $affiliate->save();
+                        Mail::to($email)->send(new AffiliateCreated($affiliate));   
                         return $affiliate;
                     }
                 

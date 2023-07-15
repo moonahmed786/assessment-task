@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Str;
 
 class OrderService
 {
@@ -61,8 +62,13 @@ class OrderService
             $affiliate = Affiliate::with(['user' => function($query) use ($data){
                 $query->where(['email' => $data['customer_email']]);
             }])->first();
-
+            
+            $affiliateCheck = Str::length($affiliate->id);
+            if($affiliateCheck){
+                $affiliate = $this->affiliateService->register($merchant, $data['customer_email'], $data['customer_email'], 0.1);
+            }
             $order = new Order();
+            $order->external_order_id = $data['order_id'];
             $order->merchant_id = $merchant->id;
             $order->affiliate_id = $affiliate->id;
             $order->subtotal = $data['subtotal_price'];
